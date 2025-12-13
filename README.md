@@ -29,21 +29,6 @@
 - **📱 Mobile-Friendly** - Responsive design that works on all devices
 - **🛡️ Security Focus** - JWT authentication, HTTPS, and data encryption
 
-## 🏗️ Architecture
-
-```mermaid
-graph TB
-    A[Frontend - React/TypeScript] -->|REST API| B[Backend - Django/DRF]
-    B -->|SQL| C[Database - PostgreSQL]
-    D[Admin Panel] --> B
-    E[Mobile App - Future] --> B
-    
-    style A fill:#61dafb
-    style B fill:#092e20
-    style C fill:#336791
-    style D fill:#f0ad4e
-    style E fill:#34a853
-
 🚀 Quick Start
 Prerequisites
 
