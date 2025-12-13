@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# UniRide Backend Documentation
 
-# Run and deploy your AI Studio app
+## Архитектура
+- **Фреймворк:** Django 4.2 + Django REST Framework
+- **База данных:** PostgreSQL 15
+- **Аутентификация:** JWT (JSON Web Tokens)
+- **API:** RESTful
 
-This contains everything you need to run your app locally.
+## Структура проекта
 
-View your app in AI Studio: https://ai.studio/apps/drive/1t7bf4T0JnYAx2liXgWD15FS_Gi1aSkbF
+backend/
+├── api/ # Основное приложение
+│ ├── models.py # Модели данных
+│ ├── serializers.py # Сериализаторы
+│ ├── views.py # View-функции
+│ ├── urls.py # Маршруты API
+│ └── permissions.py # Права доступа
+├── backend/ # Настройки проекта
+│ ├── settings.py
+│ └── urls.py
+└── manage.py
+text
 
-## Run Locally
 
-**Prerequisites:**  Node.js
+## Запуск
+```bash
+# 1. Установка зависимостей
+pip install -r requirements.txt
 
+# 2. Миграции базы данных
+python manage.py migrate
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# 3. Запуск сервера
+python manage.py runserver
+
+API будет доступно по адресу: http://localhost:8000/api/
