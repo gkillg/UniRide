@@ -88,35 +88,33 @@ docker-compose up -d
 docker-compose logs -f
 
 📁 Project Structure
-text
 
-uniride/
-├── frontend/                 # React TypeScript application
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── context/         # React context providers
-│   │   ├── services/        # API services
-│   │   ├── types/           # TypeScript definitions
-│   │   └── utils/           # Utility functions
-│   ├── public/              # Static assets
-│   └── package.json
-│
-├── backend/                 # Django REST API
-│   ├── api/                 # Main application
-│   │   ├── models.py       # Database models
-│   │   ├── serializers.py  # API serializers
-│   │   ├── views.py        # View logic
-│   │   ├── urls.py         # URL routing
-│   │   └── permissions.py  # Custom permissions
-│   ├── backend/            # Project settings
-│   └── manage.py
-│
-├── docs/                    # Documentation
-├── docker/                  # Docker configurations
-└── README.md               # This file
+    uniride/
+    ├── frontend/                 # React TypeScript application
+    │   ├── src/
+    │   │   ├── components/      # React components
+    │   │   ├── context/         # React context providers
+    │   │   ├── services/        # API services
+    │   │   ├── types/           # TypeScript definitions
+    │   │   └── utils/           # Utility functions
+    │   ├── public/              # Static assets
+    │   └── package.json
+    │
+    ├── backend/                 # Django REST API
+    │   ├── api/                 # Main application
+    │   │   ├── models.py       # Database models
+    │   │   ├── serializers.py  # API serializers
+    │   │   ├── views.py        # View logic
+    │   │   ├── urls.py         # URL routing
+    │   │   └── permissions.py  # Custom permissions
+    │   ├── backend/            # Project settings
+    │   └── manage.py
+    │
+    ├── docs/                    # Documentation
+    ├── docker/                  # Docker configurations
+    └── README.md               # This file
 
 🗄️ Database Schema
-sql
 
 -- Core Tables
 CREATE TABLE users (
@@ -182,7 +180,6 @@ Full API Documentation: API.md
 📱 Screenshots
 <div align="center"> <img src="docs/screenshots/homepage.png" width="30%" alt="Homepage"> <img src="docs/screenshots/trip-creation.png" width="30%" alt="Trip Creation"> <img src="docs/screenshots/profile.png" width="30%" alt="User Profile"> </div>
 🧪 Testing
-bash
 
 # Backend tests
 cd backend
