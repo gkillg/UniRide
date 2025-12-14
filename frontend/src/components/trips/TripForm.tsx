@@ -9,12 +9,12 @@ interface TripFormProps {
 }
 
 const POPULAR_LOCATIONS = [
-  { name: "ATU Main Campus (Tole Bi 100)", icon: "fa-university" },
-  { name: "ATU Dormitory #1", icon: "fa-bed" },
-  { name: "Almaty-2 Railway Station", icon: "fa-train" },
-  { name: "Sayran Bus Station", icon: "fa-bus" },
-  { name: "Mega Alma-Ata", icon: "fa-shopping-bag" },
-  { name: "Dostyk Plaza", icon: "fa-store" },
+  { name: "ATU Main Campus (Tole Bi 100)", icon: "fa-university", coords: [43.2565, 76.9284] },
+  { name: "ATU Dormitory #1", icon: "fa-bed", coords: [43.2389, 76.8897] },
+  { name: "Almaty-2 Railway Station", icon: "fa-train", coords: [43.2775, 76.9427] },
+  { name: "Sayran Bus Station", icon: "fa-bus", coords: [43.2435, 76.8576] },
+  { name: "Mega Alma-Ata", icon: "fa-shopping-bag", coords: [43.2033, 76.8920] },
+  { name: "Dostyk Plaza", icon: "fa-store", coords: [43.2335, 76.9567] },
 ];
 
 const PREFERENCES = [
@@ -31,13 +31,23 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
   const { user } = useAuth();
   const isEditMode = Boolean(selectedTripId);
   
-  const [formData, setFormData] = useState({
+  // Extended state to hold coords
+  const [formData, setFormData] = useState<{
+      origin: string;
+      destination: string;
+      date: string;
+      seats: number;
+      price: number;
+      description: string;
+      originCoords?: [number, number];
+      destCoords?: [number, number];
+  }>({
       origin: '', destination: '', date: '', seats: 1, price: 0, description: ''
   });
+
   const [showMap, setShowMap] = useState(false);
   const [activeField, setActiveField] = useState<'origin' | 'destination' | null>(null);
   
-  // Helper state for preferences (extracted from description or new)
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>([]);
 
   useEffect(() => {
@@ -53,10 +63,11 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                   date: formattedDate,
                   seats: trip.seats,
                   price: trip.price,
-                  description: trip.description
+                  description: trip.description,
+                  originCoords: trip.originCoords,
+                  destCoords: trip.destCoords
               });
               
-              // Extract prefs from description if they exist as hashtags or keywords
               const foundPrefs = PREFERENCES.filter(p => trip.description.includes(p.label)).map(p => p.id);
               setSelectedPrefs(foundPrefs);
 
@@ -66,9 +77,22 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
       }
   }, [isEditMode, selectedTripId]);
 
-  const handleMapSelect = (location: string) => {
+  // Updated handler for MapPicker
+  const handleMapSelect = (data: { name: string, coords: [number, number] }) => {
       if(activeField) {
-          setFormData({ ...formData, [activeField]: location });
+          if (activeField === 'origin') {
+              setFormData({ 
+                  ...formData, 
+                  origin: data.name, 
+                  originCoords: data.coords 
+              });
+          } else if (activeField === 'destination') {
+              setFormData({ 
+                  ...formData, 
+                  destination: data.name, 
+                  destCoords: data.coords 
+              });
+          }
       }
   };
 
@@ -89,7 +113,6 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
       }
       setSelectedPrefs(newPrefs);
       
-      // Update description logic: Remove all pref labels, then append selected ones
       let cleanDesc = formData.description;
       PREFERENCES.forEach(p => {
           cleanDesc = cleanDesc.replace(new RegExp(`\\s*•\\s*${p.label}`, 'g'), '');
@@ -107,10 +130,8 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
   const setDateQuick = (type: 'today' | 'tomorrow') => {
       const d = new Date();
       if (type === 'tomorrow') d.setDate(d.getDate() + 1);
-      // Default time for quick select: current time or next rounded hour
       d.setMinutes(0);
       d.setMilliseconds(0);
-      // Adjust timezone offset for input
       const offset = d.getTimezoneOffset() * 60000;
       const localISOTime = (new Date(d.getTime() - offset)).toISOString().slice(0, 16);
       setFormData({ ...formData, date: localISOTime });
@@ -129,6 +150,23 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
           setPage('home');
       } catch(e) {
           alert((e as Error).message);
+      }
+  };
+
+  // Quick select helper for Popular Locations (handles both text and coords)
+  const handlePopularSelect = (loc: typeof POPULAR_LOCATIONS[0]) => {
+      if (!formData.origin) {
+          setFormData({ 
+              ...formData, 
+              origin: loc.name,
+              originCoords: loc.coords as [number, number]
+          });
+      } else {
+          setFormData({ 
+              ...formData, 
+              destination: loc.name,
+              destCoords: loc.coords as [number, number]
+          });
       }
   };
 
@@ -186,6 +224,11 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                                       <i className="fas fa-map"></i>
                                   </button>
                               </div>
+                              {formData.originCoords && (
+                                  <div className="text-[10px] text-green-600 mt-1 flex items-center">
+                                      <i className="fas fa-check-circle mr-1"></i> Координаты: {formData.originCoords[0].toFixed(4)}, {formData.originCoords[1].toFixed(4)}
+                                  </div>
+                              )}
                           </div>
 
                           {/* To */}
@@ -212,6 +255,11 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                                       <i className="fas fa-map"></i>
                                   </button>
                               </div>
+                              {formData.destCoords && (
+                                  <div className="text-[10px] text-green-600 mt-1 flex items-center">
+                                      <i className="fas fa-check-circle mr-1"></i> Координаты: {formData.destCoords[0].toFixed(4)}, {formData.destCoords[1].toFixed(4)}
+                                  </div>
+                              )}
                           </div>
                       </div>
 
@@ -223,10 +271,7 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                                   <button 
                                       key={loc.name}
                                       type="button"
-                                      onClick={() => {
-                                          if(!formData.origin) setFormData({...formData, origin: loc.name});
-                                          else setFormData({...formData, destination: loc.name});
-                                      }}
+                                      onClick={() => handlePopularSelect(loc)}
                                       className="px-3 py-1.5 bg-gray-50 hover:bg-white text-gray-600 hover:text-[#002f6c] rounded-lg text-xs font-medium transition-all border border-gray-200 hover:border-[#002f6c] hover:shadow-sm flex items-center"
                                   >
                                       <i className={`fas ${loc.icon} mr-1.5 opacity-70`}></i>

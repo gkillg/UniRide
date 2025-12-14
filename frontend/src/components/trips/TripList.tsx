@@ -3,10 +3,29 @@ import { Trip } from '../../types';
 import { api } from '../../utils/localStorageDB';
 import TripCard from './TripCard';
 import { useAuth } from '../../context/AuthContext';
+import MapPicker from '../common/MapPicker';
 
 interface TripListProps {
   setPage: (page: string) => void;
   setSelectedTripId: (id: number | null) => void;
+}
+
+// Haversine formula to calculate distance in km
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI / 180);
 }
 
 const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
@@ -15,10 +34,14 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
   
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState(""); // Immediate input
-  const [filter, setFilter] = useState(""); // Debounced value for filtering
+  const [filter, setFilter] = useState(""); // Debounced value for text filtering
   const [dateFilter, setDateFilter] = useState<string | null>(null);
   const [priceFilter, setPriceFilter] = useState<string | null>(null);
   const [seatsFilter, setSeatsFilter] = useState<string | null>(null);
+  
+  // Map Search State
+  const [showMapSearch, setShowMapSearch] = useState(false);
+  const [mapSearchData, setMapSearchData] = useState<{name: string, coords: [number, number]} | null>(null);
   
   // UX States
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +72,7 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
     fetchTrips();
   }, []);
 
-  // Debounce Logic
+  // Debounce Logic for Text Search
   useEffect(() => {
     const handler = setTimeout(() => {
       setFilter(searchTerm);
@@ -65,16 +88,30 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
       const today = new Date();
 
       // ALWAYS Filter out past trips from the main list
-      // This fixes the issue where "Available" trips were actually completed
       if (tripDate < today) return false;
 
-      // Text Filter
-      const matchesText = filter === "" || 
-        trip.destination.toLowerCase().includes(filter.toLowerCase()) || 
-        trip.origin.toLowerCase().includes(filter.toLowerCase()) ||
-        trip.description?.toLowerCase().includes(filter.toLowerCase());
-      
-      if (!matchesText) return false;
+      // Map Radius Filter (Priority)
+      if (mapSearchData) {
+          if (!trip.destCoords) return false; // Skip if trip has no coords
+          
+          const distance = getDistanceFromLatLonInKm(
+              mapSearchData.coords[0],
+              mapSearchData.coords[1],
+              trip.destCoords[0],
+              trip.destCoords[1]
+          );
+          
+          // Show trips ending within 3km of selected point
+          if (distance > 3) return false;
+      } else {
+          // Text Filter (Only if map filter is NOT active)
+          const matchesText = filter === "" || 
+            trip.destination.toLowerCase().includes(filter.toLowerCase()) || 
+            trip.origin.toLowerCase().includes(filter.toLowerCase()) ||
+            trip.description?.toLowerCase().includes(filter.toLowerCase());
+          
+          if (!matchesText) return false;
+      }
       
       // Date Filter
       if (dateFilter === 'today') {
@@ -114,7 +151,7 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
         default: return 0;
       }
     });
-  }, [trips, filter, dateFilter, priceFilter, seatsFilter, sortBy]);
+  }, [trips, filter, dateFilter, priceFilter, seatsFilter, sortBy, mapSearchData]);
 
   // Helper functions for display text
   const getDateFilterText = () => {
@@ -141,9 +178,19 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
     }
   };
 
+  const handleMapSelect = (data: { name: string, coords: [number, number] }) => {
+      setMapSearchData(data);
+      setSearchTerm(""); // Clear text search to avoid confusion
+      setShowMapSearch(false);
+  };
+
   return (
-    <div className="max-w-7xl mx-auto mt-6 px-4 pb-12 flex-grow">
+    <div className="max-w-7xl mx-auto mt-6 px-4 pb-12 flex-grow relative">
       
+      {showMapSearch && (
+          <MapPicker onSelect={handleMapSelect} onClose={() => setShowMapSearch(false)} />
+      )}
+
       {/* New Hero Header */}
       <div className="bg-gradient-atu rounded-3xl p-8 mb-10 text-white relative overflow-hidden shadow-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
@@ -156,23 +203,38 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
           </p>
           
           <div className="flex flex-col md:flex-row gap-4 items-start">
-            <div className="flex-1 relative w-full group">
-              <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-[#002f6c] transition-colors"></i>
-              <input 
-                type="text" 
-                placeholder="Куда направляетесь? (например: 'MEGA' или 'Общежитие')" 
-                className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white/95 backdrop-blur-sm border-none rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-[#bda06d] focus:bg-white placeholder-gray-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Поиск поездок"
-              />
+            <div className="flex-1 relative w-full group flex gap-2">
+              <div className="relative flex-grow">
+                  <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-[#002f6c] transition-colors"></i>
+                  <input 
+                    type="text" 
+                    placeholder="Куда направляетесь? (например: 'MEGA')" 
+                    className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white/95 backdrop-blur-sm border-none rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-[#bda06d] focus:bg-white placeholder-gray-500 disabled:opacity-60"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={!!mapSearchData} // Disable text input if map search is active
+                    aria-label="Поиск поездок"
+                  />
+              </div>
+              <button 
+                  onClick={() => setShowMapSearch(true)}
+                  className={`px-4 py-4 rounded-xl shadow-lg font-bold transition-all flex items-center whitespace-nowrap ${
+                      mapSearchData 
+                      ? 'bg-[#bda06d] text-white ring-2 ring-white' 
+                      : 'bg-white/20 hover:bg-white/30 text-white backdrop-blur-md'
+                  }`}
+                  title="Выбрать точку на карте"
+              >
+                  <i className="fas fa-map-marked-alt mr-2"></i>
+                  {mapSearchData ? 'Изменить точку' : 'На карте'}
+              </button>
             </div>
+            
             <button 
                 onClick={() => {
-                    setFilter(searchTerm); // Force immediate search
-                    console.log('Search clicked');
+                    setFilter(searchTerm);
                 }}
-                className="bg-[#bda06d] hover:bg-[#a38855] text-white font-bold px-8 py-4 rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap flex items-center justify-center min-w-[140px]"
+                className="bg-[#bda06d] hover:bg-[#a38855] text-white font-bold px-8 py-4 rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 whitespace-nowrap flex items-center justify-center md:min-w-[140px]"
                 aria-label="Найти поездки"
             >
               <i className="fas fa-search mr-2"></i>
@@ -197,26 +259,12 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
                 >
                     <i className="fas fa-calendar-alt mr-2"></i>Завтра
                 </button>
-                <button 
-                  onClick={() => setDateFilter('week')} 
-                  className={`px-4 py-2 rounded-full transition flex items-center ${dateFilter === 'week' ? 'bg-white text-[#002f6c]' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}
-                  title="Показать поездки на этой неделе"
-                >
-                    <i className="fas fa-calendar-week mr-2"></i>Эта неделя
-                </button>
-
+                
                 <button onClick={() => setPriceFilter('free')} className={`px-4 py-2 rounded-full transition flex items-center ${priceFilter === 'free' ? 'bg-white text-[#002f6c]' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}>
                     <i className="fas fa-gift mr-2"></i>Бесплатно
                 </button>
-                <button onClick={() => setPriceFilter('500')} className={`px-4 py-2 rounded-full transition flex items-center ${priceFilter === '500' ? 'bg-white text-[#002f6c]' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}>
-                    <i className="fas fa-money-bill-wave mr-2"></i>До 500 ₸
-                </button>
 
-                <button onClick={() => setSeatsFilter('2plus')} className={`px-4 py-2 rounded-full transition flex items-center ${seatsFilter === '2plus' ? 'bg-white text-[#002f6c]' : 'bg-white/20 backdrop-blur-sm text-white hover:bg-white/30'}`}>
-                    <i className="fas fa-user-friends mr-2"></i>2+ места
-                </button>
-
-                {(dateFilter || priceFilter || seatsFilter || filter) && (
+                {(dateFilter || priceFilter || seatsFilter || filter || mapSearchData) && (
                     <button 
                     onClick={() => {
                         setDateFilter(null);
@@ -224,6 +272,7 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
                         setSeatsFilter(null);
                         setFilter('');
                         setSearchTerm('');
+                        setMapSearchData(null);
                     }}
                     className="px-4 py-2 rounded-full transition bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/30"
                     >
@@ -247,11 +296,20 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
             </div>
           </div>
 
-          {/* Active Filters Display */}
-          {(dateFilter || priceFilter || seatsFilter) && (
+          {/* Active Filters Display including Map */}
+          {(dateFilter || priceFilter || seatsFilter || mapSearchData) && (
             <div className="mt-4 p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 inline-block">
                 <div className="text-sm text-white/80 mb-1 font-medium">Активные фильтры:</div>
                 <div className="flex flex-wrap gap-2">
+                
+                {mapSearchData && (
+                    <span className="px-3 py-1 bg-[#bda06d] text-white rounded-full text-sm flex items-center font-bold shadow-sm animate-pulse">
+                        <i className="fas fa-map-pin mr-2"></i> 
+                        Рядом: {mapSearchData.name.split(',')[0]} (радиус 3км)
+                        <button onClick={() => setMapSearchData(null)} className="ml-2 text-white/80 hover:text-white"><i className="fas fa-times text-xs"></i></button>
+                    </span>
+                )}
+
                 {dateFilter && (
                     <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm flex items-center">
                     <i className="fas fa-calendar-alt mr-1"></i> {getDateFilterText()}
@@ -262,12 +320,6 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
                     <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm flex items-center">
                     <i className="fas fa-money-bill-wave mr-1"></i> {getPriceFilterText()}
                     <button onClick={() => setPriceFilter(null)} className="ml-2 text-white/70 hover:text-white"><i className="fas fa-times text-xs"></i></button>
-                    </span>
-                )}
-                {seatsFilter && (
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm flex items-center">
-                    <i className="fas fa-user-friends mr-1"></i> {getSeatsFilterText()}
-                    <button onClick={() => setSeatsFilter(null)} className="ml-2 text-white/70 hover:text-white"><i className="fas fa-times text-xs"></i></button>
                     </span>
                 )}
                 </div>
@@ -323,14 +375,17 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
                 <h3 className="text-xl font-bold text-gray-800 mb-2">Ничего не найдено</h3>
                 <div className="max-w-md mx-auto">
                     <p className="text-gray-500 mb-6">
-                        {filter 
-                            ? 'Мы не нашли поездок, соответствующих вашему запросу.' 
-                            : 'На данный момент нет активных будущих поездок, соответствующих критериям.'}
+                        {mapSearchData
+                            ? `Нет поездок в радиусе 3км от точки "${mapSearchData.name}". Попробуйте выбрать другое место или увеличьте радиус поиска.`
+                            : filter 
+                                ? 'Мы не нашли поездок, соответствующих вашему запросу.' 
+                                : 'На данный момент нет активных будущих поездок, соответствующих критериям.'
+                        }
                     </p>
                     <ul className="text-left text-gray-500 space-y-2 mb-6 max-w-xs mx-auto">
                         <li className="flex items-center">
                         <i className="fas fa-check text-green-500 mr-2"></i>
-                        Использовать другие ключевые слова
+                        Попробуйте поиск по карте
                         </li>
                         <li className="flex items-center">
                         <i className="fas fa-check text-green-500 mr-2"></i>
@@ -342,7 +397,7 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
                         </li>
                     </ul>
                     <button 
-                        onClick={() => { setFilter(''); setSearchTerm(''); setDateFilter(null); setPriceFilter(null); setSeatsFilter(null); }} 
+                        onClick={() => { setFilter(''); setSearchTerm(''); setDateFilter(null); setPriceFilter(null); setSeatsFilter(null); setMapSearchData(null); }} 
                         className="text-[#002f6c] font-bold hover:underline bg-blue-50 px-6 py-2 rounded-full"
                     >
                         Сбросить все фильтры

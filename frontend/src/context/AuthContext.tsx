@@ -2,7 +2,11 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, AuthContextType } from '../types';
 import { api } from '../utils/localStorageDB';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface ExtendedAuthContextType extends AuthContextType {
+    updateProfile: (data: Partial<User>) => Promise<boolean>;
+}
+
+const AuthContext = createContext<ExtendedAuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -12,6 +16,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUser = localStorage.getItem("uni_carpool_user");
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
+      // Always fetch fresh data to ensure we have latest updates
       const freshUser = api.getUser(parsed.id);
       setUser(freshUser || parsed);
     }
@@ -44,6 +49,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateProfile = async (data: Partial<User>) => {
+      if (!user) return false;
+      try {
+          const updatedUser = api.updateUser(user.id, data);
+          localStorage.setItem("uni_carpool_user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+          return true;
+      } catch (e) {
+          alert((e as Error).message);
+          return false;
+      }
+  };
+
   const logout = () => {
     localStorage.removeItem("uni_carpool_token");
     localStorage.removeItem("uni_carpool_user");
@@ -51,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, updateProfile }}>
       {!loading && children}
     </AuthContext.Provider>
   );

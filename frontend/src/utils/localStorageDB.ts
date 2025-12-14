@@ -122,6 +122,16 @@ export class LocalStorageDB {
       return this.table.users;
   }
 
+  updateUser(id: number, data: Partial<User>): User {
+      const db = this.table;
+      const index = db.users.findIndex((u: User) => u.id === id);
+      if (index === -1) throw new Error("User not found");
+
+      db.users[index] = { ...db.users[index], ...data };
+      this.commit(db);
+      return db.users[index];
+  }
+
   verifyUser(userId: number) {
       const db = this.table;
       const user = db.users.find((u: User) => u.id === userId);
