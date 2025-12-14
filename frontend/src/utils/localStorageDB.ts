@@ -1,7 +1,7 @@
 import { User, Trip, Booking, Review } from '../types';
 
-// Changed to v2 to force refresh of local storage data
-const DB_NAME = "uni_carpool_sql_v2";
+// Changed to v3 to force refresh of local storage data with new coordinate fields
+const DB_NAME = "uni_carpool_sql_v3";
 
 const initialSqlDump = {
   users: [
@@ -15,6 +15,8 @@ const initialSqlDump = {
       driver_id: 2, 
       origin: "ATU Main Campus (Tole Bi 100)", 
       destination: "Samal-2 District", 
+      originCoords: [43.2565, 76.9284],
+      destCoords: [43.2309, 76.9458],
       date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
       seats: 3, 
       price: 200, 
@@ -25,6 +27,8 @@ const initialSqlDump = {
       driver_id: 1, 
       origin: "ATU Dormitory #1", 
       destination: "Almaty-1 Railway Station", 
+      originCoords: [43.2389, 76.8897],
+      destCoords: [43.3413, 76.9497],
       date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
       seats: 4, 
       price: 0, 
@@ -35,6 +39,8 @@ const initialSqlDump = {
       driver_id: 2, 
       origin: "Astana Residential Complex", 
       destination: "Mega Alma-Ata", 
+      originCoords: [43.2309, 76.9458], // Approx location for demo
+      destCoords: [43.2033, 76.8920],
       date: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // Today + 3h
       seats: 2, 
       price: 150, 
@@ -45,6 +51,8 @@ const initialSqlDump = {
       driver_id: 3, 
       origin: "Dormitory #5", 
       destination: "ATU Main Campus", 
+      originCoords: [43.2435, 76.8576], // Approx location near Sayran
+      destCoords: [43.2565, 76.9284],
       date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(), // Today + 1h
       seats: 1, 
       price: 0, 
@@ -123,6 +131,19 @@ export class LocalStorageDB {
           return user;
       }
       return null;
+  }
+
+  deleteUser(userId: number) {
+      const db = this.table;
+      const index = db.users.findIndex((u: User) => u.id === userId);
+      if (index !== -1) {
+          // Cascade delete trips and bookings would go here in real DB
+          // For mock, we just delete user to prevent login
+          db.users.splice(index, 1);
+          this.commit(db);
+          return true;
+      }
+      return false;
   }
 
   // --- Trip Methods ---
@@ -228,6 +249,11 @@ export class LocalStorageDB {
             const driver = db.users.find((u: User) => u.id === trip.driver_id);
             return { ...b, trip: { ...trip, driverName: driver?.name }, tripId: b.trip_id };
         });
+  }
+
+  getAllBookings(): Booking[] {
+      const db = this.table;
+      return db.bookings;
   }
   
   getUserTrips(userId: number) {

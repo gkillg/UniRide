@@ -7,14 +7,21 @@ import * as L from 'leaflet';
 // Mock coordinates for existing demo data (fallback if trip has no coords)
 const LOCATION_MOCK: Record<string, [number, number]> = {
     "ATU Main Campus (Tole Bi 100)": [43.2565, 76.9284],
+    "ATU Main Campus": [43.2565, 76.9284],
+    "Главный корпус ATU": [43.2565, 76.9284],
     "ATU Dormitory #1": [43.2389, 76.8897],
+    "ATU Dormitory #1 (Toraigyrov 1)": [43.2389, 76.8897],
+    "Dormitory #5": [43.2435, 76.8576], // Near Sayran
     "Almaty-1 Railway Station": [43.3413, 76.9497],
     "Almaty-2 Railway Station": [43.2775, 76.9427],
     "Sayran Bus Station": [43.2435, 76.8576],
     "Mega Alma-Ata": [43.2033, 76.8920],
+    "ТРЦ 'MEGA'": [43.2033, 76.8920],
     "Dostyk Plaza": [43.2335, 76.9567],
     "Samal-2 District": [43.2309, 76.9458],
     "Samal-2": [43.2309, 76.9458],
+    "Astana Residential Complex": [43.2309, 76.9458],
+    "ЖК Астана": [43.2309, 76.9458],
 };
 
 interface TripDetailProps {
@@ -51,7 +58,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   useEffect(() => {
       if (!trip || !mapRef.current) return;
 
-      // Determine coordinates (use Trip data or fallback to mock)
+      // Determine coordinates (use Trip data OR fallback to mock)
       const startCoords = trip.originCoords || LOCATION_MOCK[trip.origin];
       const endCoords = trip.destCoords || LOCATION_MOCK[trip.destination];
 
@@ -164,6 +171,9 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   const isPassenger = user && trip.bookings?.find(b => b.userId === user.id && b.status === 'confirmed');
   const hasReviewed = user && trip.reviews?.some(r => r.fromUserId === user.id);
 
+  // Check if we have valid coordinates to decide whether to show map or "unavailable" message
+  const hasMapData = (trip.originCoords) || (LOCATION_MOCK[trip.origin]);
+
   return (
     <div className="max-w-6xl mx-auto mt-8 px-4 flex-grow pb-10">
         <button onClick={() => setPage('home')} className="mb-6 flex items-center text-[#002f6c] hover:underline font-medium text-sm uppercase tracking-wide">
@@ -238,7 +248,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                 <div className="bg-white rounded-2xl shadow-soft overflow-hidden border border-gray-100 p-1">
                     <div className="h-80 bg-gray-100 rounded-xl overflow-hidden relative">
                         <div ref={mapRef} className="absolute inset-0 z-0"></div>
-                        {(!trip.originCoords && !LOCATION_MOCK[trip.origin]) && (
+                        {!hasMapData && (
                             <div className="absolute inset-0 flex items-center justify-center bg-gray-100/90 z-10 text-gray-400">
                                 <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Map preview not available</span>
                             </div>
