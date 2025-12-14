@@ -165,187 +165,238 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   const hasReviewed = user && trip.reviews?.some(r => r.fromUserId === user.id);
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4 flex-grow pb-10">
+    <div className="max-w-6xl mx-auto mt-8 px-4 flex-grow pb-10">
         <button onClick={() => setPage('home')} className="mb-6 flex items-center text-[#002f6c] hover:underline font-medium text-sm uppercase tracking-wide">
             <i className="fas fa-chevron-left mr-2"></i> Back to search
         </button>
         
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-            {/* HEADER */}
-            <div className="bg-[#002f6c] text-white p-8 relative">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#bda06d] opacity-10 rounded-bl-full"></div>
-                <div className="flex justify-between items-start relative z-10">
-                    <div className="max-w-[70%]">
-                        <div className="flex items-center space-x-2 text-[#bda06d] mb-1">
-                            <i className="fas fa-route"></i>
-                            <span className="text-xs font-bold uppercase tracking-wider">Trip Route</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* LEFT COLUMN: Map & Trip Details */}
+            <div className="lg:col-span-2 space-y-6">
+                
+                {/* Trip Header Card */}
+                <div className="bg-white rounded-2xl shadow-soft overflow-hidden border border-gray-100">
+                    <div className="bg-gradient-atu text-white p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-10 translate-x-10 blur-xl"></div>
+                        <div className="relative z-10 flex justify-between items-start">
+                            <div>
+                                <div className="flex items-center space-x-2 text-[#bda06d] mb-2">
+                                    <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Trip Details</span>
+                                </div>
+                                <h1 className="text-3xl font-bold mb-2 leading-tight">{trip.destination}</h1>
+                                <p className="text-blue-100 text-lg flex items-center">
+                                    <i className="fas fa-map-marker-alt mr-2"></i> From: {trip.origin}
+                                </p>
+                            </div>
+                            <div className="text-right bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/10">
+                                <span className="block text-3xl font-bold">{trip.price === 0 ? "Free" : `${trip.price} ₸`}</span>
+                                <span className="text-blue-200 text-xs uppercase font-medium">per seat</span>
+                            </div>
                         </div>
-                        <h1 className="text-3xl font-bold mb-2 leading-tight">{trip.destination}</h1>
-                        <p className="text-blue-100 text-lg flex items-center">
-                             <i className="fas fa-map-marker-alt mr-2"></i> From: {trip.origin}
+                    </div>
+
+                    {/* Info Bar */}
+                    <div className="p-6 border-b border-gray-100 flex flex-wrap gap-6 text-gray-600">
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#002f6c] mr-3">
+                                <i className="far fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Date</span>
+                                <span className="font-semibold text-gray-800">{new Date(trip.date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#002f6c] mr-3">
+                                <i className="far fa-clock"></i>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Time</span>
+                                <span className="font-semibold text-gray-800">{new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#002f6c] mr-3">
+                                <i className="fas fa-chair"></i>
+                            </div>
+                            <div>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Seats</span>
+                                <span className="font-semibold text-gray-800">{trip.seats} Available</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8">
+                        <h3 className="font-bold text-gray-900 mb-3">Description</h3>
+                        <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            {trip.description || "No description provided by the driver."}
                         </p>
                     </div>
-                    <div className="text-right bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-                        <span className="block text-2xl font-bold">{trip.price === 0 ? "Free" : `${trip.price} ₸`}</span>
-                        <span className="text-blue-200 text-xs uppercase">per seat</span>
+                </div>
+
+                {/* Map Section */}
+                <div className="bg-white rounded-2xl shadow-soft overflow-hidden border border-gray-100 p-1">
+                    <div className="h-80 bg-gray-100 rounded-xl overflow-hidden relative">
+                        <div ref={mapRef} className="absolute inset-0 z-0"></div>
+                        {(!trip.originCoords && !LOCATION_MOCK[trip.origin]) && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-100/90 z-10 text-gray-400">
+                                <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Map preview not available</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* MAP SECTION */}
-            <div className="w-full h-64 bg-gray-100 relative border-b border-gray-200">
-                <div ref={mapRef} className="absolute inset-0 z-0"></div>
-                {/* Fallback msg if no coords */}
-                {(!trip.originCoords && !LOCATION_MOCK[trip.origin]) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-10 text-gray-400">
-                        <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Map preview not available for this route</span>
+                {/* Reviews Section */}
+                {trip.reviews && trip.reviews.length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100">
+                        <h3 className="font-bold text-gray-900 mb-6 flex items-center">
+                            <i className="fas fa-star text-amber-400 mr-2"></i>
+                            Passenger Reviews
+                        </h3>
+                        <div className="space-y-4">
+                            {trip.reviews.map(r => (
+                                <div key={r.id} className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center">
+                                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold text-xs mr-2">
+                                                {r.authorName ? r.authorName.charAt(0) : '?'}
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-800">{r.authorName || 'Student'}</span>
+                                        </div>
+                                        <span className="text-gray-400 text-xs">{r.date ? new Date(r.date).toLocaleDateString() : ''}</span>
+                                    </div>
+                                    <div className="flex text-amber-400 text-xs mb-2">
+                                        {"★".repeat(r.rating)}{"☆".repeat(5-r.rating)}
+                                    </div>
+                                    <p className="text-gray-600 text-sm italic">"{r.comment}"</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-                <div className="col-span-2 p-8 border-r border-gray-100">
-                     <div className="mb-8">
-                        <h3 className="font-bold text-[#002f6c] uppercase text-xs tracking-wider mb-4 border-b pb-2">Trip Details</h3>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div>
-                                <p className="text-gray-500 text-xs uppercase">Date</p>
-                                <p className="font-medium text-gray-900 text-lg">{new Date(trip.date).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                                <p className="text-gray-500 text-xs uppercase">Time</p>
-                                <p className="font-medium text-gray-900 text-lg">{new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                            </div>
+            {/* RIGHT COLUMN: Sidebar (Driver & Actions) */}
+            <div className="space-y-6">
+                
+                {/* New Driver Info Card */}
+                <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center">
+                        <i className="fas fa-id-card text-[#002f6c] mr-2"></i>
+                        Driver Information
+                    </h3>
+                    <div className="flex items-center mb-6">
+                        <div className="w-16 h-16 bg-gradient-atu rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4 shadow-md border-2 border-white ring-2 ring-blue-50">
+                            {trip.driver?.name?.charAt(0) || 'D'}
                         </div>
-                        <div className="mt-6">
-                             <p className="text-gray-500 text-xs uppercase mb-2">Description</p>
-                             <p className="text-gray-700 bg-gray-50 p-4 rounded-lg border-l-4 border-[#bda06d]">
-                                {trip.description || "No description provided."}
-                            </p>
-                        </div>
-                     </div>
-
-                     {/* Reviews */}
-                     {trip.reviews && trip.reviews.length > 0 && (
                         <div>
-                            <h3 className="font-bold text-[#002f6c] uppercase text-xs tracking-wider mb-4 border-b pb-2">Student Reviews</h3>
-                            <div className="space-y-4">
-                                {trip.reviews.map(r => (
-                                    <div key={r.id} className="bg-gray-50 p-4 rounded">
-                                        <div className="flex items-center mb-1">
-                                            <span className="text-yellow-500 text-sm mr-2">
-                                                {"★".repeat(r.rating)}{"☆".repeat(5-r.rating)}
-                                            </span>
-                                            <span className="text-gray-400 text-xs">{r.date ? new Date(r.date).toLocaleDateString() : ''}</span>
-                                        </div>
-                                        <p className="text-gray-600 text-sm italic">"{r.comment}"</p>
-                                    </div>
-                                ))}
+                            <h4 className="font-bold text-lg text-gray-900 leading-tight">{trip.driver?.name}</h4>
+                            <div className="flex items-center mt-1">
+                                <div className="flex text-amber-400 text-xs mr-2">
+                                    {'★'.repeat(5)}
+                                </div>
+                                <span className="text-xs text-gray-500 font-medium">({trip.driver?.reviewCount || 0} reviews)</span>
+                            </div>
+                            <div className="mt-1 text-xs text-[#002f6c] bg-blue-50 inline-block px-2 py-0.5 rounded font-medium">
+                                {trip.driver?.faculty || 'ATU Member'}
                             </div>
                         </div>
-                    )}
-                </div>
-
-                <div className="col-span-1 bg-gray-50 p-8">
-                    <div className="text-center mb-6">
-                        <div className="w-20 h-20 bg-[#002f6c] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 shadow-lg border-4 border-white relative">
-                            {trip.driver?.name.charAt(0)}
-                            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
-                        </div>
-                        <p className="font-bold text-gray-900">{trip.driver?.name}</p>
-                        <p className="text-xs text-gray-500 uppercase">{trip.driver?.faculty}</p>
-                        <div className="mt-2 text-yellow-500 text-sm">★ {trip.driver?.rating}</div>
                     </div>
-
-                    <div className="space-y-4">
+                    
+                    <div className="space-y-3 pt-4 border-t border-gray-100">
                         {isDriver ? (
                             <>
                                 <button 
                                     onClick={() => setPage('edit-trip')} 
-                                    className="w-full bg-blue-100 text-[#002f6c] py-3 rounded font-bold hover:bg-blue-200 transition text-sm uppercase"
+                                    className="w-full bg-blue-50 text-[#002f6c] py-3 rounded-xl font-bold hover:bg-blue-100 transition text-sm flex items-center justify-center"
                                 >
-                                    Edit Trip
+                                    <i className="fas fa-edit mr-2"></i> Edit Trip
                                 </button>
                                 <button 
                                     onClick={handleDelete} 
-                                    className="w-full bg-red-100 text-red-700 py-3 rounded font-bold hover:bg-red-200 transition text-sm uppercase"
+                                    className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100 transition text-sm flex items-center justify-center"
                                 >
-                                    Cancel Trip
+                                    <i className="fas fa-trash-alt mr-2"></i> Cancel Trip
                                 </button>
                             </>
                         ) : (
                             <button 
                                 onClick={handleBook}
                                 disabled={trip.seats === 0 || isPast}
-                                className={`w-full py-4 rounded font-bold text-sm uppercase shadow-md transition
+                                className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition transform active:scale-95 flex items-center justify-center
                                     ${trip.seats === 0 || isPast 
                                         ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
-                                        : "bg-[#bda06d] text-white hover:bg-[#a38855]"
+                                        : "bg-[#bda06d] text-white hover:bg-[#a38855] hover:shadow-lg"
                                     }`}
                             >
-                                {isPast ? "Trip Completed" : trip.seats === 0 ? "Fully Booked" : "Book Seat"}
+                                {isPast ? "Trip Completed" : trip.seats === 0 ? "Fully Booked" : 
+                                    <><i className="fas fa-check-circle mr-2"></i> Book Seat</>
+                                }
                             </button>
                         )}
                     </div>
                 </div>
+
+                {/* Driver Management (Requests) */}
+                {isDriver && (
+                    <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100">
+                        <h3 className="font-bold text-gray-900 mb-4 flex items-center justify-between">
+                            <span>Booking Requests</span>
+                            <span className="bg-blue-100 text-[#002f6c] text-xs px-2 py-1 rounded-full">{trip.bookings?.length || 0}</span>
+                        </h3>
+                        {!trip.bookings || trip.bookings.length === 0 ? (
+                            <p className="text-gray-400 text-sm italic text-center py-4">No active requests yet.</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {trip.bookings.map(booking => (
+                                    <div key={booking.id} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-xl">
+                                        <span className="text-sm font-bold text-gray-700">Passenger #{booking.userId}</span>
+                                        {booking.status === 'pending' ? (
+                                            <div className="flex gap-2">
+                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'confirmed', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center"><i className="fas fa-check"></i></button>
+                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'rejected', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center"><i className="fas fa-times"></i></button>
+                                            </div>
+                                        ) : (
+                                            <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${
+                                                booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            }`}>
+                                                {booking.status}
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Review Form */}
+                {isPassenger && isPast && !hasReviewed && (
+                    <div className="bg-yellow-50 rounded-2xl shadow-sm p-6 border border-yellow-200">
+                        <h3 className="text-sm font-bold text-[#002f6c] uppercase mb-4">Rate your ride</h3>
+                        <form onSubmit={handleSubmitReview} className="space-y-4">
+                            <select 
+                                value={rating} onChange={(e) => setRating(Number(e.target.value))}
+                                className="block w-full border border-yellow-300 rounded-xl p-3 bg-white text-sm focus:ring-2 focus:ring-[#bda06d] outline-none"
+                            >
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Average</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                            <textarea 
+                                required 
+                                className="w-full p-3 border border-yellow-300 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#bda06d] outline-none" 
+                                rows={3}
+                                placeholder="How was the ride?"
+                                value={comment} onChange={e => setComment(e.target.value)}
+                            ></textarea>
+                            <button type="submit" className="w-full bg-[#002f6c] text-white py-3 rounded-xl text-sm font-bold uppercase hover:bg-blue-900 transition">Submit Review</button>
+                        </form>
+                    </div>
+                )}
             </div>
-
-            {/* DRIVER MANAGEMENT SECTION */}
-            {isDriver && (
-                <div className="border-t border-gray-200 p-8 bg-gray-50">
-                    <h3 className="font-bold text-[#002f6c] uppercase text-xs tracking-wider mb-4">Requests ({trip.bookings?.length || 0})</h3>
-                    {!trip.bookings || trip.bookings.length === 0 ? (
-                        <p className="text-gray-400 text-sm italic">No active requests.</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {trip.bookings.map(booking => (
-                                <div key={booking.id} className="flex justify-between items-center bg-white border border-gray-200 p-3 rounded shadow-sm">
-                                    <span className="text-sm font-medium text-gray-700">Passenger #{booking.userId}</span>
-                                    {booking.status === 'pending' ? (
-                                        <div className="space-x-2">
-                                            <button onClick={() => { api.updateBookingStatus(booking.id, 'confirmed', user!.id); setTrip(api.getTrip(trip.id)); }} className="text-green-600 hover:text-green-800 text-xs font-bold uppercase">Accept</button>
-                                            <button onClick={() => { api.updateBookingStatus(booking.id, 'rejected', user!.id); setTrip(api.getTrip(trip.id)); }} className="text-red-600 hover:text-red-800 text-xs font-bold uppercase">Reject</button>
-                                        </div>
-                                    ) : (
-                                        <span className={`text-xs font-bold uppercase ${
-                                            booking.status === 'confirmed' ? 'text-green-600' : 'text-red-600'
-                                        }`}>
-                                            {booking.status}
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* REVIEW FORM FOR PASSENGER */}
-            {isPassenger && isPast && !hasReviewed && (
-                <div className="p-8 border-t border-yellow-200 bg-yellow-50">
-                    <h3 className="text-sm font-bold text-[#002f6c] uppercase mb-4">Leave Feedback</h3>
-                    <form onSubmit={handleSubmitReview} className="space-y-4">
-                        <select 
-                            value={rating} onChange={(e) => setRating(Number(e.target.value))}
-                            className="block w-full border border-yellow-300 rounded p-2 bg-white text-sm"
-                        >
-                            <option value="5">5 - Excellent</option>
-                            <option value="4">4 - Good</option>
-                            <option value="3">3 - Average</option>
-                            <option value="2">2 - Poor</option>
-                            <option value="1">1 - Terrible</option>
-                        </select>
-                        <textarea 
-                            required 
-                            className="w-full p-3 border border-yellow-300 rounded bg-white text-sm focus:outline-none focus:ring-1 focus:ring-[#bda06d]" 
-                            rows={2}
-                            placeholder="How was the ride?"
-                            value={comment} onChange={e => setComment(e.target.value)}
-                        ></textarea>
-                        <button type="submit" className="bg-[#002f6c] text-white px-6 py-2 rounded text-xs font-bold uppercase hover:bg-blue-900">Submit</button>
-                    </form>
-                </div>
-            )}
         </div>
     </div>
   );
