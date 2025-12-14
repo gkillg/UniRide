@@ -7,47 +7,56 @@ interface TripCardProps {
 }
 
 const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
+  // Safety check
+  if (!trip) return null;
+
   // Расчет времени до поездки
   const getTimeInfo = () => {
-    const now = new Date();
-    const tripDate = new Date(trip.date);
-    const diff = tripDate.getTime() - now.getTime();
-    
-    if (diff <= 0) return { 
-      text: "Завершено", 
-      color: "text-gray-600", 
-      bg: "bg-gray-100",
-      border: "border-gray-300"
-    };
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-    
-    if (days > 0) return { 
-      text: `${days}д ${hours % 24}ч`, 
-      color: "text-green-700", 
-      bg: "bg-green-50",
-      border: "border-green-200"
-    };
-    if (hours > 0) return { 
-      text: `${hours} часов`, 
-      color: "text-amber-700", 
-      bg: "bg-amber-50",
-      border: "border-amber-200"
-    };
-    return { 
-      text: "Скоро", 
-      color: "text-red-700", 
-      bg: "bg-red-50",
-      border: "border-red-200"
-    };
+    try {
+      const now = new Date();
+      const tripDate = new Date(trip.date);
+      if (isNaN(tripDate.getTime())) throw new Error("Invalid date");
+
+      const diff = tripDate.getTime() - now.getTime();
+      
+      if (diff <= 0) return { 
+        text: "Завершено", 
+        color: "text-gray-600", 
+        bg: "bg-gray-100",
+        border: "border-gray-300"
+      };
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(hours / 24);
+      
+      if (days > 0) return { 
+        text: `${days}д ${hours % 24}ч`, 
+        color: "text-green-700", 
+        bg: "bg-green-50",
+        border: "border-green-200"
+      };
+      if (hours > 0) return { 
+        text: `${hours} часов`, 
+        color: "text-amber-700", 
+        bg: "bg-amber-50",
+        border: "border-amber-200"
+      };
+      return { 
+        text: "Скоро", 
+        color: "text-red-700", 
+        bg: "bg-red-50",
+        border: "border-red-200"
+      };
+    } catch (e) {
+      return { text: "N/A", color: "text-gray-500", bg: "bg-gray-100", border: "border-gray-200" };
+    }
   };
 
   // Расчет заполненности (макс 5 мест)
   const getSeatInfo = () => {
     const maxSeats = 5;
-    const takenSeats = maxSeats - trip.seats;
-    const percentage = (takenSeats / maxSeats) * 100;
+    const takenSeats = Math.max(0, maxSeats - trip.seats);
+    const percentage = Math.min(100, (takenSeats / maxSeats) * 100);
     
     let color = "bg-green-500";
     if (percentage >= 80) color = "bg-red-500";

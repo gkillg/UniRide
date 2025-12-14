@@ -1,6 +1,7 @@
 import { User, Trip, Booking, Review } from '../types';
 
-const DB_NAME = "uni_carpool_sql_v1";
+// Changed to v2 to force refresh of local storage data
+const DB_NAME = "uni_carpool_sql_v2";
 
 const initialSqlDump = {
   users: [
@@ -9,8 +10,46 @@ const initialSqlDump = {
     { id: 3, username: "passenger1", password: "password", name: "Dina S.", faculty: "Design", email: "dina@atu.edu.kz", phone: "+7 (702) 555-0011", rating: 4.5, reviewCount: 2, isStaff: false, email_confirmed: false },
   ],
   trips: [
-    { id: 1, driver_id: 2, origin: "ATU Main Campus (Tole Bi 100)", destination: "Samal-2 District", date: "2023-11-25T18:00", seats: 3, price: 200, description: "Going home after evening lectures. Listening to Jazz." },
-    { id: 2, driver_id: 1, origin: "ATU Dormitory #1", destination: "Almaty-1 Railway Station", date: "2024-12-26T09:00", seats: 4, price: 0, description: "Free ride for students going to the station." },
+    { 
+      id: 1, 
+      driver_id: 2, 
+      origin: "ATU Main Campus (Tole Bi 100)", 
+      destination: "Samal-2 District", 
+      date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+      seats: 3, 
+      price: 200, 
+      description: "Going home after evening lectures. Listening to Jazz." 
+    },
+    { 
+      id: 2, 
+      driver_id: 1, 
+      origin: "ATU Dormitory #1", 
+      destination: "Almaty-1 Railway Station", 
+      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // Day after tomorrow
+      seats: 4, 
+      price: 0, 
+      description: "Free ride for students going to the station." 
+    },
+    { 
+      id: 3, 
+      driver_id: 2, 
+      origin: "Astana Residential Complex", 
+      destination: "Mega Alma-Ata", 
+      date: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // Today + 3h
+      seats: 2, 
+      price: 150, 
+      description: "Going shopping. Can drop you off at the metro." 
+    },
+    { 
+      id: 4, 
+      driver_id: 3, 
+      origin: "Dormitory #5", 
+      destination: "ATU Main Campus", 
+      date: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(), // Today + 1h
+      seats: 1, 
+      price: 0, 
+      description: "Free ride to university." 
+    },
   ],
   bookings: [],
   reviews: [],
