@@ -280,61 +280,29 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
             <div className="space-y-6">
                 
                 {/* New Driver Info Card */}
-                <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center">
-                        <i className="fas fa-id-card text-[#002f6c] mr-2"></i>
-                        Driver Information
-                    </h3>
-                    <div className="flex items-center mb-6">
-                        <div className="w-16 h-16 bg-gradient-atu rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4 shadow-md border-2 border-white ring-2 ring-blue-50">
-                            {trip.driver?.name?.charAt(0) || 'D'}
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-lg text-gray-900 leading-tight">{trip.driver?.name}</h4>
-                            <div className="flex items-center mt-1">
-                                <div className="flex text-amber-400 text-xs mr-2">
-                                    {'★'.repeat(5)}
-                                </div>
-                                <span className="text-xs text-gray-500 font-medium">({trip.driver?.reviewCount || 0} reviews)</span>
-                            </div>
-                            <div className="mt-1 text-xs text-[#002f6c] bg-blue-50 inline-block px-2 py-0.5 rounded font-medium">
-                                {trip.driver?.faculty || 'ATU Member'}
-                            </div>
-                        </div>
+                <div className="bg-white rounded-2xl shadow-soft p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <i className="fas fa-user-circle text-[#002f6c] mr-2"></i>
+                    Информация о водителе
+                  </h3>
+                  <div className="flex items-center">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#002f6c] to-[#bda06d] rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4">
+                      {trip.driver?.name?.charAt(0) || 'В'}
                     </div>
-                    
-                    <div className="space-y-3 pt-4 border-t border-gray-100">
-                        {isDriver ? (
-                            <>
-                                <button 
-                                    onClick={() => setPage('edit-trip')} 
-                                    className="w-full bg-blue-50 text-[#002f6c] py-3 rounded-xl font-bold hover:bg-blue-100 transition text-sm flex items-center justify-center"
-                                >
-                                    <i className="fas fa-edit mr-2"></i> Edit Trip
-                                </button>
-                                <button 
-                                    onClick={handleDelete} 
-                                    className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100 transition text-sm flex items-center justify-center"
-                                >
-                                    <i className="fas fa-trash-alt mr-2"></i> Cancel Trip
-                                </button>
-                            </>
-                        ) : (
-                            <button 
-                                onClick={handleBook}
-                                disabled={trip.seats === 0 || isPast}
-                                className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition transform active:scale-95 flex items-center justify-center
-                                    ${trip.seats === 0 || isPast 
-                                        ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
-                                        : "bg-[#bda06d] text-white hover:bg-[#a38855] hover:shadow-lg"
-                                    }`}
-                            >
-                                {isPast ? "Trip Completed" : trip.seats === 0 ? "Fully Booked" : 
-                                    <><i className="fas fa-check-circle mr-2"></i> Book Seat</>
-                                }
-                            </button>
-                        )}
+                    <div>
+                      <h4 className="font-bold text-xl text-gray-900">{trip.driver?.name}</h4>
+                      <div className="flex items-center mt-1">
+                        <div className="flex text-amber-400 mr-2">
+                          {'★'.repeat(5)}
+                        </div>
+                        <span className="text-gray-600">({trip.driver?.reviewCount || 0} отзывов)</span>
+                      </div>
+                      <div className="mt-2 flex items-center text-gray-500">
+                        <i className="fas fa-graduation-cap mr-2"></i>
+                        <span>{trip.driver?.faculty || 'ATU Student'}</span>
+                      </div>
                     </div>
+                  </div>
                 </div>
 
                 {/* Driver Management (Requests) */}
@@ -396,6 +364,40 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                         </form>
                     </div>
                 )}
+                
+                {/* Actions */}
+                <div className="space-y-3 pt-4 border-t border-gray-100">
+                    {isDriver ? (
+                        <>
+                            <button 
+                                onClick={() => setPage('edit-trip')} 
+                                className="w-full bg-blue-50 text-[#002f6c] py-3 rounded-xl font-bold hover:bg-blue-100 transition text-sm flex items-center justify-center"
+                            >
+                                <i className="fas fa-edit mr-2"></i> Edit Trip
+                            </button>
+                            <button 
+                                onClick={handleDelete} 
+                                className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100 transition text-sm flex items-center justify-center"
+                            >
+                                <i className="fas fa-trash-alt mr-2"></i> Cancel Trip
+                            </button>
+                        </>
+                    ) : (
+                        <button 
+                            onClick={handleBook}
+                            disabled={trip.seats === 0 || isPast}
+                            className={`w-full py-4 rounded-xl font-bold text-sm shadow-md transition transform active:scale-95 flex items-center justify-center
+                                ${trip.seats === 0 || isPast 
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed" 
+                                    : "bg-[#bda06d] text-white hover:bg-[#a38855] hover:shadow-lg"
+                                }`}
+                        >
+                            {isPast ? "Trip Completed" : trip.seats === 0 ? "Fully Booked" : 
+                                <><i className="fas fa-check-circle mr-2"></i> Book Seat</>
+                            }
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     </div>
