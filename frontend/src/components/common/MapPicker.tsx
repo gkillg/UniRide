@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import * as L from 'leaflet';
 
 interface MapPickerProps {
   onSelect: (location: string) => void;
@@ -8,12 +9,12 @@ interface MapPickerProps {
 const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-    if (!mapContainerRef.current || !(window as any).L) return;
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
 
-    const L = (window as any).L; // Используем глобальный L
+    // Initialize Leaflet Map centered on Almaty
     const map = L.map(mapContainerRef.current).setView([43.2389, 76.8897], 13);
-  
+
     // Add OSM Tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'

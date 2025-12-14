@@ -17,6 +17,9 @@ export interface Trip {
   driver_id: number;
   origin: string;
   destination: string;
+  // New coordinate fields
+  originCoords?: [number, number];
+  destCoords?: [number, number];
   date: string;
   seats: number;
   price: number;

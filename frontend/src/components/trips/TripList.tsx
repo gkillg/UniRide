@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trip } from '../../types';
 import { api } from '../../utils/localStorageDB';
+import TripCard from './TripCard';
 
 interface TripListProps {
   setPage: (page: string) => void;
@@ -93,48 +94,11 @@ const TripList: React.FC<TripListProps> = ({ setPage, setSelectedTripId }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrips.map(trip => (
-            <div key={trip.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition duration-300 flex flex-col group">
-              <div className="h-2 bg-[#002f6c] group-hover:bg-[#bda06d] transition-colors"></div>
-              <div className="p-6 flex-grow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-full">
-                    <h3 className="text-lg font-bold text-[#002f6c] truncate" title={trip.destination}>{trip.destination}</h3>
-                    <div className="flex items-center mt-2 text-sm text-gray-600">
-                        <div className="flex flex-col items-center mr-3">
-                            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                            <div className="w-0.5 h-6 bg-gray-200 my-0.5"></div>
-                            <div className="w-2 h-2 rounded-full bg-[#002f6c]"></div>
-                        </div>
-                        <div className="flex flex-col h-12 justify-between">
-                            <span className="truncate w-48" title={trip.origin}>{trip.origin}</span>
-                            <span className="font-semibold text-[#002f6c]">Destination</span>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-3 text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex justify-between items-center">
-                        <span className="flex items-center"><i className="far fa-calendar-alt w-5 text-gray-400"></i> {new Date(trip.date).toLocaleDateString()}</span>
-                        <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                            <span className="flex items-center"><i className="fas fa-user-circle w-5 text-gray-400"></i> {trip.driverName}</span>
-                            <span className="text-yellow-500 text-xs">★ {trip.driverRating}</span>
-                    </div>
-                    <div className="flex justify-between items-center font-semibold">
-                            <span className={trip.seats > 0 ? "text-green-600" : "text-red-500"}>{trip.seats} seats left</span>
-                            <span className="text-lg text-[#002f6c]">{trip.price === 0 ? "Free" : `${trip.price} ₸`}</span>
-                    </div>
-                </div>
-              </div>
-              <button 
-                onClick={() => { setSelectedTripId(trip.id); setPage('trip-detail'); }}
-                className="w-full bg-gray-50 text-[#002f6c] py-3 font-bold text-sm uppercase tracking-wider hover:bg-[#002f6c] hover:text-white transition"
-              >
-                View Details
-              </button>
-            </div>
+            <TripCard 
+              key={trip.id} 
+              trip={trip} 
+              onSelect={(id) => { setSelectedTripId(id); setPage('trip-detail'); }} 
+            />
           ))}
         </div>
       )}

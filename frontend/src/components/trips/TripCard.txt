@@ -1,0 +1,97 @@
+import React from 'react';
+import { Trip } from '../../types';
+
+interface TripCardProps {
+  trip: Trip;
+  onSelect: (id: number) => void;
+}
+
+const TripCard: React.FC<TripCardProps> = ({ trip, onSelect }) => {
+  const isPast = new Date(trip.date) < new Date();
+  const isFull = trip.seats === 0;
+
+  let statusColor = "bg-green-100 text-green-800";
+  let statusText = "Active";
+
+  if (isPast) {
+    statusColor = "bg-gray-100 text-gray-500";
+    statusText = "Completed";
+  } else if (isFull) {
+    statusColor = "bg-red-100 text-red-800";
+    statusText = "Full";
+  } else if (new Date(trip.date).getTime() - Date.now() < 3600000 * 24 && !isPast) {
+      statusColor = "bg-yellow-100 text-yellow-800";
+      statusText = "Upcoming";
+  }
+
+  return (
+    <div 
+        onClick={() => onSelect(trip.id)}
+        className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition duration-300 flex flex-col group cursor-pointer h-full relative"
+    >
+        {/* Status Badge */}
+        <div className={`absolute top-4 right-4 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide z-10 ${statusColor}`}>
+            {statusText}
+        </div>
+
+        <div className="h-2 bg-[#002f6c] group-hover:bg-[#bda06d] transition-colors"></div>
+        
+        <div className="p-6 flex-grow flex flex-col">
+            <div className="mb-4">
+                <div className="flex flex-col">
+                     <span className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">To</span>
+                     <h3 className="text-xl font-bold text-[#002f6c] leading-tight line-clamp-2" title={trip.destination}>{trip.destination}</h3>
+                </div>
+                <div className="mt-3 flex items-start">
+                    <div className="mt-1 mr-2 flex flex-col items-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                        <div className="w-0.5 h-6 bg-gray-100 my-0.5"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#bda06d]"></div>
+                    </div>
+                    <div>
+                         <span className="text-xs text-gray-400 uppercase font-bold tracking-wider block">From</span>
+                         <span className="text-sm text-gray-600 font-medium line-clamp-1" title={trip.origin}>{trip.origin}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-gray-100 space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center text-gray-600">
+                        <i className="far fa-calendar-alt w-5 text-[#bda06d]"></i>
+                        <span>{new Date(trip.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="font-mono font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
+                        {new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                     <div className="flex items-center">
+                         <div className="w-6 h-6 rounded-full bg-[#002f6c] text-white flex items-center justify-center text-xs font-bold mr-2">
+                             {trip.driverName?.charAt(0)}
+                         </div>
+                         <span className="text-gray-700 font-medium truncate max-w-[100px]">{trip.driverName}</span>
+                     </div>
+                     <div className="flex items-center text-yellow-500 text-xs">
+                         <i className="fas fa-star mr-1"></i>
+                         {trip.driverRating}
+                     </div>
+                </div>
+                
+                <div className="flex justify-between items-end pt-2">
+                     <div className={`text-xs font-bold uppercase ${trip.seats > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                         <i className="fas fa-chair mr-1"></i>
+                         {trip.seats} seats left
+                     </div>
+                     <div className="text-xl font-bold text-[#002f6c]">
+                         {trip.price === 0 ? "Free" : `${trip.price} ₸`}
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  );
+};
+
+export default TripCard;

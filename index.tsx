@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { GoogleGenAI } from "@google/genai";
-import L from "leaflet";
+import * as L from "leaflet";
 
 // --- CONSTANTS & POPULAR PLACES ---
 

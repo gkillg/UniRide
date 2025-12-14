@@ -1,7 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Trip } from '../../types';
 import { api } from '../../utils/localStorageDB';
+import * as L from 'leaflet';
+
+// Mock coordinates for existing demo data (fallback if trip has no coords)
+const LOCATION_MOCK: Record<string, [number, number]> = {
+    "ATU Main Campus (Tole Bi 100)": [43.2565, 76.9284],
+    "ATU Dormitory #1": [43.2389, 76.8897],
+    "Almaty-1 Railway Station": [43.3413, 76.9497],
+    "Almaty-2 Railway Station": [43.2775, 76.9427],
+    "Sayran Bus Station": [43.2435, 76.8576],
+    "Mega Alma-Ata": [43.2033, 76.8920],
+    "Dostyk Plaza": [43.2335, 76.9567],
+    "Samal-2 District": [43.2309, 76.9458],
+    "Samal-2": [43.2309, 76.9458],
+};
 
 interface TripDetailProps {
   tripId: number | null;
@@ -17,6 +31,10 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Map Refs
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+
   useEffect(() => {
     if (!tripId) return;
     try {
@@ -28,6 +46,74 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
         setLoading(false);
     }
   }, [tripId, submittingReview]);
+
+  // --- MAP EFFECT ---
+  useEffect(() => {
+      if (!trip || !mapRef.current) return;
+
+      // Determine coordinates (use Trip data or fallback to mock)
+      const startCoords = trip.originCoords || LOCATION_MOCK[trip.origin];
+      const endCoords = trip.destCoords || LOCATION_MOCK[trip.destination];
+
+      // Cleanup existing map
+      if (mapInstanceRef.current) {
+          mapInstanceRef.current.remove();
+          mapInstanceRef.current = null;
+      }
+
+      // If we have at least start coords, show map
+      if (startCoords) {
+          const map = L.map(mapRef.current).setView(startCoords, 13);
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+
+          // Custom Icons using FontAwesome
+          const createIcon = (iconClass: string, color: string) => L.divIcon({
+              className: 'custom-div-icon',
+              html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                        <i class="${iconClass}" style="color: white; font-size: 14px;"></i>
+                     </div>`,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+          });
+
+          // Start Marker
+          L.marker(startCoords, { icon: createIcon('fas fa-car', '#002f6c') })
+            .addTo(map)
+            .bindPopup(`<b>Start:</b> ${trip.origin}`);
+
+          // End Marker & Route
+          if (endCoords) {
+              L.marker(endCoords, { icon: createIcon('fas fa-flag-checkered', '#bda06d') })
+                .addTo(map)
+                .bindPopup(`<b>End:</b> ${trip.destination}`);
+
+              // Draw Line
+              const polyline = L.polyline([startCoords, endCoords], {
+                  color: '#002f6c',
+                  weight: 4,
+                  opacity: 0.7,
+                  dashArray: '10, 10',
+                  lineCap: 'round'
+              }).addTo(map);
+
+              // Fit bounds to show whole route
+              map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+          }
+
+          mapInstanceRef.current = map;
+      }
+
+      return () => {
+          if (mapInstanceRef.current) {
+              mapInstanceRef.current.remove();
+              mapInstanceRef.current = null;
+          }
+      };
+  }, [trip]);
+
 
   const handleBook = () => {
       if(!user) {
@@ -79,17 +165,22 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   const hasReviewed = user && trip.reviews?.some(r => r.fromUserId === user.id);
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4 flex-grow">
+    <div className="max-w-4xl mx-auto mt-10 px-4 flex-grow pb-10">
         <button onClick={() => setPage('home')} className="mb-6 flex items-center text-[#002f6c] hover:underline font-medium text-sm uppercase tracking-wide">
             <i className="fas fa-chevron-left mr-2"></i> Back to search
         </button>
         
         <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+            {/* HEADER */}
             <div className="bg-[#002f6c] text-white p-8 relative">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#bda06d] opacity-10 rounded-bl-full"></div>
                 <div className="flex justify-between items-start relative z-10">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2 text-[#bda06d]">{trip.destination}</h1>
+                    <div className="max-w-[70%]">
+                        <div className="flex items-center space-x-2 text-[#bda06d] mb-1">
+                            <i className="fas fa-route"></i>
+                            <span className="text-xs font-bold uppercase tracking-wider">Trip Route</span>
+                        </div>
+                        <h1 className="text-3xl font-bold mb-2 leading-tight">{trip.destination}</h1>
                         <p className="text-blue-100 text-lg flex items-center">
                              <i className="fas fa-map-marker-alt mr-2"></i> From: {trip.origin}
                         </p>
@@ -99,6 +190,17 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                         <span className="text-blue-200 text-xs uppercase">per seat</span>
                     </div>
                 </div>
+            </div>
+
+            {/* MAP SECTION */}
+            <div className="w-full h-64 bg-gray-100 relative border-b border-gray-200">
+                <div ref={mapRef} className="absolute inset-0 z-0"></div>
+                {/* Fallback msg if no coords */}
+                {(!trip.originCoords && !LOCATION_MOCK[trip.origin]) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-10 text-gray-400">
+                        <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Map preview not available for this route</span>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
@@ -146,8 +248,9 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
 
                 <div className="col-span-1 bg-gray-50 p-8">
                     <div className="text-center mb-6">
-                        <div className="w-20 h-20 bg-[#002f6c] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 shadow-lg border-4 border-white">
+                        <div className="w-20 h-20 bg-[#002f6c] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3 shadow-lg border-4 border-white relative">
                             {trip.driver?.name.charAt(0)}
+                            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
                         </div>
                         <p className="font-bold text-gray-900">{trip.driver?.name}</p>
                         <p className="text-xs text-gray-500 uppercase">{trip.driver?.faculty}</p>
