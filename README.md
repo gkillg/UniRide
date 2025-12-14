@@ -1,20 +1,89 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🚗 UniRide - University Carpooling Platform
 
-# Run and deploy your AI Studio app
+## 📋 Project Overview
+UniRide is a web application for finding carpooling partners among university students. Developed as part of coursework at Almaty Technological University.
 
-This contains everything you need to run your app locally.
+## 🚀 Quick Start
+```bash
+cd frontend
+npm install
+npm run dev
 
-View your app in AI Studio: https://ai.studio/apps/drive/1t7bf4T0JnYAx2liXgWD15FS_Gi1aSkbF
+📁 Project Structure
+text
 
-## Run Locally
+UniRide/
+├── frontend/           # React TypeScript Application
+├── backend_docs/      # Django Backend Documentation
+├── presentation/      # Gamma Presentation
+├── video/            # Demo Video
+└── documentation/    # Technical Documentation
 
-**Prerequisites:**  Node.js
+🔗 Links
+
+    Live Demo: [Coming Soon]
+
+    Presentation: [Gamma Link]
+
+    Video Demo: [YouTube Link]
+
+👤 Author
+
+[Your Name] - Group [Your Group] - ATU
+text
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### **ШАГ 2: СОЗДАЙ СТРУКТУРУ ПАПОК**
+В корне репозитория создай папки:
+
+mkdir backend_docs
+mkdir presentation
+mkdir video
+mkdir documentation
+mkdir screenshots
+text
+
+
+### **ШАГ 3: ЗАГРУЗИ МАТЕРИАЛЫ**
+Перенеси файлы в папки:
+- `BACKEND_REFERENCE.md` → в `backend_docs/`
+- Gamma презентацию → в `presentation/`
+- Видео демо → в `video/`
+- Скриншоты → в `screenshots/`
+
+### **ШАГ 4: ОБНОВИ frontend/README.md**
+Замени содержимое `frontend/README.md` на:
+
+```markdown
+# UniRide Frontend
+
+## 🛠 Technologies
+- React 19 + TypeScript
+- Vite for building
+- Leaflet for maps
+- Tailwind CSS for styling
+
+## 📦 Installation
+```bash
+npm install
+npm run dev
+
+🚗 Features
+
+    User registration & authentication
+
+    Trip creation with interactive maps
+
+    Booking system
+
+    User profiles with ratings
+
+    Real-time chat simulation
+
+🧪 Test Accounts
+
+    Driver: driver1 / password
+
+    Passenger: passenger1 / password
+
+    Admin: admin / password
