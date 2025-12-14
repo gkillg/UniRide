@@ -7,11 +7,17 @@ const API_KEY = "5d98480b-bdc3-45fb-bb82-bd59a18d07f0";
 interface MapPickerProps {
   onSelect: (data: { name: string; coords: [number, number] }) => void;
   onClose: () => void;
+  initialCoords?: [number, number]; // Added prop for initial centering
 }
 
-const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
+const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose, initialCoords }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+
+  // Default center (Almaty)
+  const defaultCenter: [number, number] = [43.2389, 76.8897];
+  const center = initialCoords || defaultCenter;
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -19,8 +25,8 @@ const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
     // Prevent double initialization
     if (mapInstanceRef.current) return;
 
-    // Initialize Leaflet Map centered on Almaty
-    const map = L.map(mapContainerRef.current).setView([43.2389, 76.8897], 13);
+    // Initialize Leaflet Map
+    const map = L.map(mapContainerRef.current).setView(center, 13);
     mapInstanceRef.current = map;
 
     // 2GIS Tiles Integration
@@ -30,11 +36,23 @@ const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
       maxZoom: 18,
     }).addTo(map);
 
+    // Add initial marker if coords exist
+    if (initialCoords) {
+        markerRef.current = L.marker(initialCoords).addTo(map);
+    }
+
     // Map Click Event with Reverse Geocoding
     map.on('click', async (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       
-      // Loading indicator logic could go here (e.g., cursor change)
+      // Update Marker position
+      if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng]);
+      } else {
+          markerRef.current = L.marker([lat, lng]).addTo(map);
+      }
+
+      // Show loading state (cursor)
       map.getContainer().style.cursor = 'wait';
 
       try {
@@ -43,20 +61,24 @@ const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
           const data = await response.json();
           
           const item = data.result?.items?.[0];
-          // Prefer full_name, fallback to name, fallback to coords
+          // Prefer full_name, fallback to name, fallback to coords formatted
           const address = item?.full_name || item?.name || `Координаты: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           
           // Reset cursor
           map.getContainer().style.cursor = '';
 
           // Confirm selection
-          if(confirm(`Выбрать точку?\n${address}`)) {
-            onSelect({
-                name: address,
-                coords: [lat, lng]
-            });
-            onClose();
-          }
+          // Slight timeout to allow marker to move visually before alert
+          setTimeout(() => {
+              if(confirm(`Выбрать этот адрес?\n${address}`)) {
+                onSelect({
+                    name: address,
+                    coords: [lat, lng]
+                });
+                onClose(); // Close modal after selection
+              }
+          }, 100);
+
       } catch (error) {
           console.error("Geocoding error:", error);
           map.getContainer().style.cursor = '';
@@ -78,22 +100,24 @@ const MapPicker: React.FC<MapPickerProps> = ({ onSelect, onClose }) => {
           mapInstanceRef.current = null;
       }
     };
-  }, [onSelect, onClose]);
+  }, []); // Only run once on mount
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="bg-white p-4 rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden animate-fade-in">
+            <div className="bg-[#002f6c] text-white p-4 flex justify-between items-center shadow-md z-10">
                  <div>
-                     <h3 className="text-xl font-bold text-[#002f6c]">Выберите место на карте</h3>
-                     <p className="text-xs text-gray-500">Используются карты 2GIS. Кликните для выбора адреса.</p>
+                     <h3 className="text-lg font-bold flex items-center">
+                        <i className="fas fa-map-marked-alt mr-2"></i> Выберите место
+                     </h3>
+                     <p className="text-xs text-blue-200">Используются карты 2GIS. Кликните для выбора адреса.</p>
                  </div>
-                 <button onClick={onClose} className="text-gray-500 hover:text-red-500 transition">
-                     <i className="fas fa-times text-2xl"></i>
+                 <button onClick={onClose} className="text-white/80 hover:text-white transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                     <i className="fas fa-times text-xl"></i>
                  </button>
             </div>
-            <div className="flex-grow bg-gray-100 rounded border border-gray-300 relative overflow-hidden">
-                <div ref={mapContainerRef} className="w-full h-full"></div>
+            <div className="flex-grow bg-gray-100 relative">
+                <div ref={mapContainerRef} className="w-full h-full outline-none"></div>
             </div>
         </div>
     </div>

@@ -4,14 +4,17 @@ import { Trip } from '../../types';
 import { api } from '../../utils/localStorageDB';
 import * as L from 'leaflet';
 
-// Mock coordinates for existing demo data (fallback if trip has no coords)
+// 2GIS API Key
+const API_KEY = "5d98480b-bdc3-45fb-bb82-bd59a18d07f0";
+
+// Mock coordinates for fallback locations (used if trip coords are missing)
 const LOCATION_MOCK: Record<string, [number, number]> = {
     "ATU Main Campus (Tole Bi 100)": [43.2565, 76.9284],
     "ATU Main Campus": [43.2565, 76.9284],
     "Главный корпус ATU": [43.2565, 76.9284],
     "ATU Dormitory #1": [43.2389, 76.8897],
     "ATU Dormitory #1 (Toraigyrov 1)": [43.2389, 76.8897],
-    "Dormitory #5": [43.2435, 76.8576], // Near Sayran
+    "Dormitory #5": [43.2435, 76.8576],
     "Almaty-1 Railway Station": [43.3413, 76.9497],
     "Almaty-2 Railway Station": [43.2775, 76.9427],
     "Sayran Bus Station": [43.2435, 76.8576],
@@ -72,41 +75,56 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
       if (startCoords) {
           const map = L.map(mapRef.current).setView(startCoords, 13);
           
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap contributors'
+          // Use 2GIS Tiles
+          L.tileLayer('https://tile{s}.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
+              subdomains: ['0', '1', '2', '3'],
+              attribution: '&copy; <a href="http://2gis.ru">2GIS</a>',
+              maxZoom: 18,
           }).addTo(map);
 
           // Custom Icons using FontAwesome
           const createIcon = (iconClass: string, color: string) => L.divIcon({
               className: 'custom-div-icon',
-              html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-                        <i class="${iconClass}" style="color: white; font-size: 14px;"></i>
+              html: `<div style="background-color: ${color}; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                        <i class="${iconClass}" style="color: white; font-size: 16px;"></i>
                      </div>`,
-              iconSize: [30, 30],
-              iconAnchor: [15, 15]
+              iconSize: [36, 36],
+              iconAnchor: [18, 18],
+              popupAnchor: [0, -18]
           });
 
           // Start Marker
           L.marker(startCoords, { icon: createIcon('fas fa-car', '#002f6c') })
             .addTo(map)
-            .bindPopup(`<b>Start:</b> ${trip.origin}`);
+            .bindPopup(`
+                <div class="text-center">
+                    <div class="font-bold text-[#002f6c] mb-1">Точка отправления</div>
+                    <div class="text-sm">${trip.origin}</div>
+                </div>
+            `);
 
           // End Marker & Route
           if (endCoords) {
               L.marker(endCoords, { icon: createIcon('fas fa-flag-checkered', '#bda06d') })
                 .addTo(map)
-                .bindPopup(`<b>End:</b> ${trip.destination}`);
+                .bindPopup(`
+                    <div class="text-center">
+                        <div class="font-bold text-[#bda06d] mb-1">Назначение</div>
+                        <div class="text-sm">${trip.destination}</div>
+                    </div>
+                `);
 
               // Draw Line
               const polyline = L.polyline([startCoords, endCoords], {
                   color: '#002f6c',
-                  weight: 4,
-                  opacity: 0.7,
-                  dashArray: '10, 10',
-                  lineCap: 'round'
+                  weight: 5,
+                  opacity: 0.8,
+                  dashArray: '10, 12',
+                  lineCap: 'round',
+                  lineJoin: 'round'
               }).addTo(map);
 
-              // Fit bounds to show whole route
+              // Fit bounds to show whole route with padding
               map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
           }
 
@@ -131,7 +149,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
 
       try {
           api.bookTrip(trip.id, user.id);
-          alert("Request sent successfully.");
+          alert("Заявка успешно отправлена.");
           setPage('profile');
       } catch(e) {
           alert((e as Error).message);
@@ -140,7 +158,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
 
   const handleDelete = () => {
       if (!trip || !user) return;
-      if(confirm("Confirm deletion?")) {
+      if(confirm("Вы уверены, что хотите удалить поездку?")) {
           try {
               api.deleteTrip(trip.id, user.id);
               setPage('home');
@@ -157,14 +175,14 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
           api.addReview(trip.id, user.id, trip.driver_id, rating, comment);
           setSubmittingReview(!submittingReview);
           setComment("");
-          alert("Review added.");
+          alert("Отзыв добавлен.");
       } catch(e) {
           alert((e as Error).message);
       }
   }
 
   if(loading) return <div className="flex justify-center mt-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#002f6c]"></div></div>;
-  if(!trip) return <div className="text-center mt-10 text-red-500 font-bold">Trip not found</div>;
+  if(!trip) return <div className="text-center mt-10 text-red-500 font-bold">Поездка не найдена</div>;
 
   const isDriver = user && user.id === trip.driver_id;
   const isPast = new Date(trip.date) < new Date();
@@ -177,7 +195,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
   return (
     <div className="max-w-6xl mx-auto mt-8 px-4 flex-grow pb-10">
         <button onClick={() => setPage('home')} className="mb-6 flex items-center text-[#002f6c] hover:underline font-medium text-sm uppercase tracking-wide">
-            <i className="fas fa-chevron-left mr-2"></i> Back to search
+            <i className="fas fa-chevron-left mr-2"></i> Назад к поиску
         </button>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -191,16 +209,16 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                         <div className="relative z-10 flex justify-between items-start">
                             <div>
                                 <div className="flex items-center space-x-2 text-[#bda06d] mb-2">
-                                    <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Trip Details</span>
+                                    <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Детали поездки</span>
                                 </div>
                                 <h1 className="text-3xl font-bold mb-2 leading-tight">{trip.destination}</h1>
                                 <p className="text-blue-100 text-lg flex items-center">
-                                    <i className="fas fa-map-marker-alt mr-2"></i> From: {trip.origin}
+                                    <i className="fas fa-map-marker-alt mr-2"></i> Из: {trip.origin}
                                 </p>
                             </div>
                             <div className="text-right bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/10">
-                                <span className="block text-3xl font-bold">{trip.price === 0 ? "Free" : `${trip.price} ₸`}</span>
-                                <span className="text-blue-200 text-xs uppercase font-medium">per seat</span>
+                                <span className="block text-3xl font-bold">{trip.price === 0 ? "Бесплатно" : `${trip.price} ₸`}</span>
+                                <span className="text-blue-200 text-xs uppercase font-medium">за место</span>
                             </div>
                         </div>
                     </div>
@@ -212,7 +230,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                 <i className="far fa-calendar-alt"></i>
                             </div>
                             <div>
-                                <span className="block text-xs text-gray-400 uppercase font-bold">Date</span>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Дата</span>
                                 <span className="font-semibold text-gray-800">{new Date(trip.date).toLocaleDateString()}</span>
                             </div>
                         </div>
@@ -221,7 +239,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                 <i className="far fa-clock"></i>
                             </div>
                             <div>
-                                <span className="block text-xs text-gray-400 uppercase font-bold">Time</span>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Время</span>
                                 <span className="font-semibold text-gray-800">{new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                             </div>
                         </div>
@@ -230,29 +248,30 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                 <i className="fas fa-chair"></i>
                             </div>
                             <div>
-                                <span className="block text-xs text-gray-400 uppercase font-bold">Seats</span>
-                                <span className="font-semibold text-gray-800">{trip.seats} Available</span>
+                                <span className="block text-xs text-gray-400 uppercase font-bold">Места</span>
+                                <span className="font-semibold text-gray-800">{trip.seats} Свободно</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-8">
-                        <h3 className="font-bold text-gray-900 mb-3">Description</h3>
+                        <h3 className="font-bold text-gray-900 mb-3">Описание</h3>
                         <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            {trip.description || "No description provided by the driver."}
+                            {trip.description || "Водитель не добавил описание."}
                         </p>
                     </div>
                 </div>
 
                 {/* Map Section */}
                 <div className="bg-white rounded-2xl shadow-soft overflow-hidden border border-gray-100 p-1">
-                    <div className="h-80 bg-gray-100 rounded-xl overflow-hidden relative">
+                    <div className="h-96 bg-gray-100 rounded-xl overflow-hidden relative">
                         <div ref={mapRef} className="absolute inset-0 z-0"></div>
                         {!hasMapData && (
                             <div className="absolute inset-0 flex items-center justify-center bg-gray-100/90 z-10 text-gray-400">
-                                <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Map preview not available</span>
+                                <span className="text-sm"><i className="fas fa-map-slash mr-2"></i> Карта недоступна</span>
                             </div>
                         )}
+                        {/* 2GIS Attribution overlay if needed, but standard attribution handles it */}
                     </div>
                 </div>
 
@@ -261,7 +280,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                     <div className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center">
                             <i className="fas fa-star text-amber-400 mr-2"></i>
-                            Passenger Reviews
+                            Отзывы пассажиров
                         </h3>
                         <div className="space-y-4">
                             {trip.reviews.map(r => (
@@ -271,7 +290,7 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold text-xs mr-2">
                                                 {r.authorName ? r.authorName.charAt(0) : '?'}
                                             </div>
-                                            <span className="text-sm font-bold text-gray-800">{r.authorName || 'Student'}</span>
+                                            <span className="text-sm font-bold text-gray-800">{r.authorName || 'Студент'}</span>
                                         </div>
                                         <span className="text-gray-400 text-xs">{r.date ? new Date(r.date).toLocaleDateString() : ''}</span>
                                     </div>
@@ -289,27 +308,27 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
             {/* RIGHT COLUMN: Sidebar (Driver & Actions) */}
             <div className="space-y-6">
                 
-                {/* New Driver Info Card */}
-                <div className="bg-white rounded-2xl shadow-soft p-6 mb-6">
+                {/* Driver Info Card */}
+                <div className="bg-white rounded-2xl shadow-soft p-6 mb-6 border border-gray-100">
                   <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <i className="fas fa-user-circle text-[#002f6c] mr-2"></i>
-                    Информация о водителе
+                    Водитель
                   </h3>
                   <div className="flex items-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#002f6c] to-[#bda06d] rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4">
-                      {trip.driver?.name?.charAt(0) || 'В'}
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#002f6c] to-[#bda06d] rounded-full flex items-center justify-center text-white text-2xl font-bold mr-4 shadow-lg">
+                      {trip.driver?.name?.charAt(0) || 'D'}
                     </div>
                     <div>
                       <h4 className="font-bold text-xl text-gray-900">{trip.driver?.name}</h4>
                       <div className="flex items-center mt-1">
-                        <div className="flex text-amber-400 mr-2">
+                        <div className="flex text-amber-400 mr-2 text-sm">
                           {'★'.repeat(5)}
                         </div>
-                        <span className="text-gray-600">({trip.driver?.reviewCount || 0} отзывов)</span>
+                        <span className="text-xs text-gray-500 font-bold uppercase">({trip.driver?.reviewCount || 0} отзывов)</span>
                       </div>
-                      <div className="mt-2 flex items-center text-gray-500">
-                        <i className="fas fa-graduation-cap mr-2"></i>
-                        <span>{trip.driver?.faculty || 'ATU Student'}</span>
+                      <div className="mt-2 flex items-center text-sm text-gray-500">
+                        <i className="fas fa-graduation-cap mr-2 text-[#002f6c]"></i>
+                        <span>{trip.driver?.faculty || 'Студент ATU'}</span>
                       </div>
                     </div>
                   </div>
@@ -319,20 +338,20 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                 {isDriver && (
                     <div className="bg-white rounded-2xl shadow-soft p-6 border border-gray-100">
                         <h3 className="font-bold text-gray-900 mb-4 flex items-center justify-between">
-                            <span>Booking Requests</span>
+                            <span>Заявки на бронь</span>
                             <span className="bg-blue-100 text-[#002f6c] text-xs px-2 py-1 rounded-full">{trip.bookings?.length || 0}</span>
                         </h3>
                         {!trip.bookings || trip.bookings.length === 0 ? (
-                            <p className="text-gray-400 text-sm italic text-center py-4">No active requests yet.</p>
+                            <p className="text-gray-400 text-sm italic text-center py-4">Нет активных заявок.</p>
                         ) : (
                             <div className="space-y-3">
                                 {trip.bookings.map(booking => (
                                     <div key={booking.id} className="flex justify-between items-center bg-gray-50 border border-gray-200 p-3 rounded-xl">
-                                        <span className="text-sm font-bold text-gray-700">Passenger #{booking.userId}</span>
+                                        <span className="text-sm font-bold text-gray-700">Пассажир #{booking.userId}</span>
                                         {booking.status === 'pending' ? (
                                             <div className="flex gap-2">
-                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'confirmed', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center"><i className="fas fa-check"></i></button>
-                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'rejected', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center"><i className="fas fa-times"></i></button>
+                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'confirmed', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center transition"><i className="fas fa-check"></i></button>
+                                                <button onClick={() => { api.updateBookingStatus(booking.id, 'rejected', user!.id); setTrip(api.getTrip(trip.id)); }} className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center transition"><i className="fas fa-times"></i></button>
                                             </div>
                                         ) : (
                                             <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${
@@ -351,26 +370,26 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                 {/* Review Form */}
                 {isPassenger && isPast && !hasReviewed && (
                     <div className="bg-yellow-50 rounded-2xl shadow-sm p-6 border border-yellow-200">
-                        <h3 className="text-sm font-bold text-[#002f6c] uppercase mb-4">Rate your ride</h3>
+                        <h3 className="text-sm font-bold text-[#002f6c] uppercase mb-4">Оцените поездку</h3>
                         <form onSubmit={handleSubmitReview} className="space-y-4">
                             <select 
                                 value={rating} onChange={(e) => setRating(Number(e.target.value))}
                                 className="block w-full border border-yellow-300 rounded-xl p-3 bg-white text-sm focus:ring-2 focus:ring-[#bda06d] outline-none"
                             >
-                                <option value="5">5 - Excellent</option>
-                                <option value="4">4 - Good</option>
-                                <option value="3">3 - Average</option>
-                                <option value="2">2 - Poor</option>
-                                <option value="1">1 - Terrible</option>
+                                <option value="5">5 - Отлично</option>
+                                <option value="4">4 - Хорошо</option>
+                                <option value="3">3 - Нормально</option>
+                                <option value="2">2 - Плохо</option>
+                                <option value="1">1 - Ужасно</option>
                             </select>
                             <textarea 
                                 required 
                                 className="w-full p-3 border border-yellow-300 rounded-xl bg-white text-sm focus:ring-2 focus:ring-[#bda06d] outline-none" 
                                 rows={3}
-                                placeholder="How was the ride?"
+                                placeholder="Как прошла поездка?"
                                 value={comment} onChange={e => setComment(e.target.value)}
                             ></textarea>
-                            <button type="submit" className="w-full bg-[#002f6c] text-white py-3 rounded-xl text-sm font-bold uppercase hover:bg-blue-900 transition">Submit Review</button>
+                            <button type="submit" className="w-full bg-[#002f6c] text-white py-3 rounded-xl text-sm font-bold uppercase hover:bg-blue-900 transition shadow-md">Оставить отзыв</button>
                         </form>
                     </div>
                 )}
@@ -383,13 +402,13 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                 onClick={() => setPage('edit-trip')} 
                                 className="w-full bg-blue-50 text-[#002f6c] py-3 rounded-xl font-bold hover:bg-blue-100 transition text-sm flex items-center justify-center"
                             >
-                                <i className="fas fa-edit mr-2"></i> Edit Trip
+                                <i className="fas fa-edit mr-2"></i> Изменить
                             </button>
                             <button 
                                 onClick={handleDelete} 
                                 className="w-full bg-red-50 text-red-600 py-3 rounded-xl font-bold hover:bg-red-100 transition text-sm flex items-center justify-center"
                             >
-                                <i className="fas fa-trash-alt mr-2"></i> Cancel Trip
+                                <i className="fas fa-trash-alt mr-2"></i> Отменить поездку
                             </button>
                         </>
                     ) : (
@@ -402,8 +421,8 @@ const TripDetail: React.FC<TripDetailProps> = ({ tripId, setPage }) => {
                                     : "bg-[#bda06d] text-white hover:bg-[#a38855] hover:shadow-lg"
                                 }`}
                         >
-                            {isPast ? "Trip Completed" : trip.seats === 0 ? "Fully Booked" : 
-                                <><i className="fas fa-check-circle mr-2"></i> Book Seat</>
+                            {isPast ? "Поездка завершена" : trip.seats === 0 ? "Мест нет" : 
+                                <><i className="fas fa-check-circle mr-2"></i> Забронировать место</>
                             }
                         </button>
                     )}

@@ -77,23 +77,24 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
       }
   }, [isEditMode, selectedTripId]);
 
-  // Updated handler for MapPicker
+  // Handle selection from MapPicker
   const handleMapSelect = (data: { name: string, coords: [number, number] }) => {
       if(activeField) {
           if (activeField === 'origin') {
-              setFormData({ 
-                  ...formData, 
+              setFormData(prev => ({ 
+                  ...prev, 
                   origin: data.name, 
                   originCoords: data.coords 
-              });
+              }));
           } else if (activeField === 'destination') {
-              setFormData({ 
-                  ...formData, 
+              setFormData(prev => ({ 
+                  ...prev, 
                   destination: data.name, 
                   destCoords: data.coords 
-              });
+              }));
           }
       }
+      setShowMap(false);
   };
 
   const openMap = (field: 'origin' | 'destination') => {
@@ -153,26 +154,33 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
       }
   };
 
-  // Quick select helper for Popular Locations (handles both text and coords)
+  // Quick select helper
   const handlePopularSelect = (loc: typeof POPULAR_LOCATIONS[0]) => {
       if (!formData.origin) {
-          setFormData({ 
-              ...formData, 
+          setFormData(prev => ({ 
+              ...prev, 
               origin: loc.name,
               originCoords: loc.coords as [number, number]
-          });
+          }));
       } else {
-          setFormData({ 
-              ...formData, 
+          setFormData(prev => ({ 
+              ...prev, 
               destination: loc.name,
               destCoords: loc.coords as [number, number]
-          });
+          }));
       }
   };
 
   return (
       <div className="max-w-3xl mx-auto mt-8 px-4 flex-grow relative pb-12">
-          {showMap && <MapPicker onSelect={handleMapSelect} onClose={() => setShowMap(false)} />}
+          {/* Map Modal */}
+          {showMap && (
+              <MapPicker 
+                  onSelect={handleMapSelect} 
+                  onClose={() => setShowMap(false)} 
+                  initialCoords={activeField === 'origin' ? formData.originCoords : formData.destCoords}
+              />
+          )}
           
           <button onClick={() => setPage('home')} className="mb-6 flex items-center text-gray-500 hover:text-[#002f6c] transition font-medium text-sm">
             <i className="fas fa-arrow-left mr-2"></i> Назад к списку
@@ -197,7 +205,7 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                       </h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                          {/* Desktop Line - visible only on md+ */}
+                          {/* Desktop Line */}
                           <div className="hidden md:block absolute left-1/2 top-10 bottom-4 w-px bg-gray-200 -translate-x-1/2 z-0"></div>
                           
                           {/* From */}
@@ -218,15 +226,15 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                                   <button 
                                       type="button" 
                                       onClick={() => openMap('origin')} 
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#002f6c] transition bg-white rounded-lg shadow-sm border border-gray-100 hover:border-gray-300"
-                                      title="Выбрать на карте"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#002f6c] bg-blue-50 hover:bg-[#002f6c] hover:text-white transition rounded-lg shadow-sm border border-blue-100"
+                                      title="Выбрать на карте 2GIS"
                                   >
-                                      <i className="fas fa-map"></i>
+                                      <i className="fas fa-map-marked-alt"></i>
                                   </button>
                               </div>
                               {formData.originCoords && (
-                                  <div className="text-[10px] text-green-600 mt-1 flex items-center">
-                                      <i className="fas fa-check-circle mr-1"></i> Координаты: {formData.originCoords[0].toFixed(4)}, {formData.originCoords[1].toFixed(4)}
+                                  <div className="text-[10px] text-green-600 mt-1 flex items-center animate-fade-in">
+                                      <i className="fas fa-check-circle mr-1"></i> 2GIS Координаты: {formData.originCoords[0].toFixed(4)}, {formData.originCoords[1].toFixed(4)}
                                   </div>
                               )}
                           </div>
@@ -249,15 +257,15 @@ const TripForm: React.FC<TripFormProps> = ({ setPage, selectedTripId }) => {
                                   <button 
                                       type="button" 
                                       onClick={() => openMap('destination')} 
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-[#002f6c] transition bg-white rounded-lg shadow-sm border border-gray-100 hover:border-gray-300"
-                                      title="Выбрать на карте"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#002f6c] bg-blue-50 hover:bg-[#002f6c] hover:text-white transition rounded-lg shadow-sm border border-blue-100"
+                                      title="Выбрать на карте 2GIS"
                                   >
-                                      <i className="fas fa-map"></i>
+                                      <i className="fas fa-map-marked-alt"></i>
                                   </button>
                               </div>
                               {formData.destCoords && (
-                                  <div className="text-[10px] text-green-600 mt-1 flex items-center">
-                                      <i className="fas fa-check-circle mr-1"></i> Координаты: {formData.destCoords[0].toFixed(4)}, {formData.destCoords[1].toFixed(4)}
+                                  <div className="text-[10px] text-green-600 mt-1 flex items-center animate-fade-in">
+                                      <i className="fas fa-check-circle mr-1"></i> 2GIS Координаты: {formData.destCoords[0].toFixed(4)}, {formData.destCoords[1].toFixed(4)}
                                   </div>
                               )}
                           </div>
