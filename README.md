@@ -52,8 +52,7 @@ UniRide/
 │   └── package.json       # Зависимости
 ├── backend_docs/          # Документация по бэкенду
 ├── presentation/          # Материалы презентации
-├── screenshots/           # Скриншоты приложения
-└── documentation/         # Техническая документация
+└── screenshots/           # Скриншоты приложения
 ```
 
 ---
