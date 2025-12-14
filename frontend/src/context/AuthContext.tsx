@@ -1,0 +1,64 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User, AuthContextType } from '../types';
+import { api } from '../utils/localStorageDB';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("uni_carpool_user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      const freshUser = api.getUser(parsed.id);
+      setUser(freshUser || parsed);
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    try {
+      const { user, token } = api.login(username, password);
+      localStorage.setItem("uni_carpool_token", token);
+      localStorage.setItem("uni_carpool_user", JSON.stringify(user));
+      setUser(user);
+      return true;
+    } catch (e) {
+      alert((e as Error).message);
+      return false;
+    }
+  };
+
+  const register = async (formData: Partial<User>) => {
+    try {
+      const { user, token } = api.register(formData);
+      localStorage.setItem("uni_carpool_token", token);
+      localStorage.setItem("uni_carpool_user", JSON.stringify(user));
+      setUser(user);
+      return true;
+    } catch (e) {
+      alert((e as Error).message);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("uni_carpool_token");
+    localStorage.removeItem("uni_carpool_user");
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+};
